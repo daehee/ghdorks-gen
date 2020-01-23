@@ -31,22 +31,21 @@ func readLines(filename string) ([]string, error) {
 
 func main() {
 
+	target := ""
+	flag.StringVar(&target, "t", "", "")
+
+	dorksFile := ""
+	flag.StringVar(&dorksFile, "d", "", "")
+
+	mdOut := ""
+	flag.StringVar(&mdOut, "m", "", "")
+
 	flag.Parse()
 
-	// Open and parse targets file into a slice
-	targetsFile := flag.Arg(0)
-	if targetsFile == "" {
-		log.Fatalln("Must provide path to targets file")
+	if target == "" {
+		log.Fatalln("Must provide target keyword or domain")
 	}
 
-	targets, err := readLines(targetsFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open targets file: %s\n", err)
-		os.Exit(1)
-	}
-
-	// Open and parse dorks file into a slice
-	dorksFile := flag.Arg(1)
 	if dorksFile == "" {
 		log.Fatalln("Must provide path to dorks file")
 	}
@@ -58,10 +57,34 @@ func main() {
 	}
 
 	// Combine dorks with targets to output URL list of clickable github dorks
-	for _, d := range dorks {
-		for _, t := range targets {
+	if mdOut != "" {
+		f, err := os.Create(mdOut)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to create markdown export file: %s\n", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+
+		w := bufio.NewWriter(f)
+
+		for _, d := range dorks {
+			dURL := fmt.Sprintf("https://github.com/search?q=%%22%s%%22+%s&type=Code",
+				url.QueryEscape(target),
+				url.QueryEscape(d))
+			// Format as markdown list of hyperlinked tasks
+			l := fmt.Sprintf("- [ ] [%s](%s)\n", d, dURL)
+
+			_, err := w.WriteString(l)
+			if err != nil {
+				log.Fatalln("Error writing to markdown export file")
+			}
+		}
+
+		w.Flush()
+	} else {
+		for _, d := range dorks {
 			fmt.Printf("https://github.com/search?q=%%22%s%%22+%s&type=Code\n",
-				url.QueryEscape(t),
+				url.QueryEscape(target),
 				url.QueryEscape(d))
 		}
 	}

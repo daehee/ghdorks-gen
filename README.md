@@ -4,6 +4,6 @@ A simple generator of github dorks.
 ## Basic Usage
 
 ```shell script
-ghdorks-gen domains.txt github-dorks.txt > outfile.txt
+ghdorks-gen -t <target keyword> -d /path/to/github-dorks.txt [-m dorks-todo.md]
 ```
 
